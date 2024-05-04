@@ -128,8 +128,6 @@ const UpdatePassword = async (req, res) => {
     }
   };
 
-
-
 // Declaring an asynchronous function to get all users
 const getAllUsers = async (req,res) => {
     try{
@@ -238,10 +236,10 @@ const updateUser= async(req, res) => {
     // Getting the user ID from request parameters
     const id = req.params.userId;
     // Getting the updated data from request body
-    const data = req.body;
+    const newData = req.body;
     try {
         // Updating the user by ID with new data
-        const updateUser = await User.findByIdAndUpdate(id, data, { new: true });
+        const updateUser = await User.findByIdAndUpdate(id, newData, { new: true });
         // Returning the updated user as JSON response
         return res.json(updateUser);
     } catch (err) {

@@ -14,7 +14,7 @@ router.post('/ResetPassword',ResetPassword);
 router.get("/AllUsers", getAllUsers);
 router.get("/:userId", getUserById);
 router.delete("/delete/:userId",deleteUser);
-router.put("/:userId", updateUser); 
+router.put("/updateUser/:userId", updateUser); 
 router.put("/Enable/:userId", EnableUser); 
 router.put("/Disable/:userId", DisableUser); 
 module.exports = router;
