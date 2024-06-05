@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const feedbackSchema = new mongoose.Schema({
+  visible: {
+    type: Boolean,
+    default: false,
+  },
   email: {
     type: String,
     required: true

@@ -1,12 +1,13 @@
 // Importing the User model from "../Models/UserModel"
 const User = require("../Models/UserModel");
+const jwt = require("jsonwebtoken");
 const nodemailer = require('nodemailer');
-
+const bcrypt = require('bcrypt');
 
 // Declaring an asynchronous function to create users
 const SignUp = async(req,res) => {
     try {
-        const { First_name, name, email, selectedRole, num_tel, address, password, conf_password } = req.body;
+        const { First_name, name, email, selectedRole, num_tel, address, password, conf_password ,role} = req.body;
 
         if (password !== conf_password) {
             return res.json({ success: false, message: "Les mots de passe ne correspondent pas" });
@@ -26,44 +27,56 @@ const SignUp = async(req,res) => {
             num_tel,
             address,
             password,
-            conf_password
+            conf_password,
+            role
         });
 
-        await newUser.save(); // Sauvegarder le nouvel utilisateur
+    // Enregistrement du nouvel utilisateur
+    await newUser.save();
 
-        return res.json({ success: true, message: "Inscription réussie" });
+    // Génération du jeton JWT
+    //const token = jwt.sign({ userId: newUser._id }, secretKey); // Remplacez '1h' par la durée d'expiration souhaitée
+
+    // Renvoi de la réponse avec le jeton JWT
+    res.json({ success: true, message: "Inscription réussie",newUser });
     } catch (err) {
         return res.status(500).json({ success: false, message: "Une erreur est survenue lors de l'inscription" });
     }
 };
 
 const LogIn = async (req, res) => {
-    const { email, password } = req.body;
-  
-    try {
+  const { email, password } = req.body;
+
+  try {
       // Recherchez l'utilisateur dans la base de données
       const user = await User.findOne({ email });
-  
+
       // Vérifiez si l'utilisateur existe
       if (!user) {
-        return res.json({ message: "Utilisateur non trouvé" });
-      }
-  
-      // Vérifiez si le mot de passe est correct
-      if (user.password !== password) {
-        return res.json({ message: "Mot de passe incorrect" });
+          return res.json({ message: "Utilisateur non trouvé" });
       }
 
-      if (!user.isEnabled) {
-        return res.json({message:'Compte désactivé. Veuillez contacter l\'administrateur.'});
+      // Vérifiez si le mot de passe est correct
+      if (user.password !== password) {
+          return res.json({ message: "Mot de passe incorrect" });
       }
-      // Si l'utilisateur est trouvé et que le mot de passe est correct, retournez un succès
-      res.json({ message: "Connexion réussie", user });
-    } catch (error) {
+
+      // Vérifiez si le compte est activé
+      if (!user.isEnabled) {
+          return res.json({ message: "Compte désactivé. Veuillez contacter l'administrateur." });
+      }
+
+      // Génération du jeton JWT
+      const token = jwt.sign({ id: user._id, role: user.role }, 'your_jwt_secret', { expiresIn: '1h' });
+
+      // Renvoi de la réponse avec le jeton JWT
+      return res.json({ success: true, message: "Connexion réussie", user, token });
+
+  } catch (error) {
       console.error("Erreur de connexion:", error);
-      res.status(500).json({ message: "Une erreur est survenue lors de la connexion" });
-    }
-  };
+      return res.status(500).json({ message: "Une erreur est survenue lors de la connexion" });
+  }
+};
 
 // Configuration du service d'envoi d'e-mails avec Nodemailer
 const transporter = nodemailer.createTransport({
@@ -134,7 +147,7 @@ const getAllUsers = async (req,res) => {
         // Finding all users in the database
         const users = await User.find()
         // Returning users as JSON response
-        return res.status(200).json(users);
+        return  res.status(200).json({ success: true,message: "Tous les utilisateur sont affichés ", users});
     } catch(error){
         // Handling errors and returning as JSON response
         return res.status(500).json({ success :false , message: error.message})
@@ -164,9 +177,11 @@ const deleteUser = async(req,res) => {
         // Deleting the user by ID
         const  deleteUser = await User.findByIdAndDelete(id);
         // Returning the deleted user as JSON response
-        console.log('Utilisateur à supprimer :', user); // Vérifier l'objet utilisateur et l'ID
+        //console.log('Utilisateur à supprimer :', user); // Vérifier l'objet utilisateur et l'ID
+        return  res.status(200).json({ success: true,message: "Cet Utilisateur supprimé avec succès."});
       
-        return  console.log('Utilisateur à supprimer :', user);
+        //return res.json({message: "Utilisateur à supprimer :"}, user);
+        
     }catch(err){
         // Handling errors and returning as JSON response
         return res.json(err)
@@ -195,7 +210,7 @@ const EnableUser = async (req, res) => {
     await user.save();
 
     // Send success response
-    res.status(200).send(`Utilisateur avec l'ID ${id} activé avec succès.`);
+    res.status(200).json({success: true,message: `Utilisateur avec l'ID ${id} activé avec succès.`});
   } catch (error) {
     console.error(`Échec de l'activation de l'utilisateur avec l'ID ${id} :`, error);
     res.status(500).send("Erreur lors de l'activation de l'utilisateur.");
@@ -224,7 +239,7 @@ const DisableUser = async (req, res) => {
     await user.save();
 
     // Send success response
-    res.status(200).send(`Utilisateur avec l'ID ${id} désactivé avec succès.`);
+    res.status(200).json({success: true,message: `Utilisateur avec l'ID ${id} désactivé avec succès.`});
   } catch (error) {
     console.error(`Échec de la désactivation de l'utilisateur avec l'ID ${id} :`, error);
     res.status(500).send('Erreur lors de la désactivation de l\'utilisateur.');
@@ -236,10 +251,10 @@ const updateUser= async(req, res) => {
     // Getting the user ID from request parameters
     const id = req.params.userId;
     // Getting the updated data from request body
-    const newData = req.body;
+    const updatedData = req.body;
     try {
         // Updating the user by ID with new data
-        const updateUser = await User.findByIdAndUpdate(id, newData, { new: true });
+        const updateUser = await User.findByIdAndUpdate(id, updatedData, { new: true });
         // Returning the updated user as JSON response
         return res.json(updateUser);
     } catch (err) {
@@ -248,5 +263,13 @@ const updateUser= async(req, res) => {
     }
 };
 
+const getUserChats = async(req, res) => {
+  const user = req.userProfile;
+  const data = await User.find({ _id: { $in: user.chats } },
+      "_id name username email profileUrl"
+  ).catch((err) => console.log(err));
+  return res.status(200).json({ success: true, chats: data });
+};
+
 // Exporting functions to be used in other modules
-module.exports = {LogIn,SignUp,ResetPassword,UpdatePassword,getAllUsers ,getUserById ,deleteUser, EnableUser, DisableUser,updateUser};
+module.exports = {LogIn,SignUp,ResetPassword,UpdatePassword,getAllUsers ,getUserById ,deleteUser, EnableUser, DisableUser,updateUser, getUserChats};
