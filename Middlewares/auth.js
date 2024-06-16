@@ -17,13 +17,14 @@
 //module.exports =  { authenticateToken,secretKey };
 // middleware/auth.js
 const jwt = require('jsonwebtoken');
-
+const AUTH_SECRET = "auth-secret-20406"
 const auth = (req, res, next) => {
     const token = req.header('x-auth-token');
+    console.log("Getting middleware")
     if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
 
     try {
-        const decoded = jwt.verify(token, 'your_jwt_secret');
+        const decoded = jwt.verify(token, AUTH_SECRET);
         req.user = decoded;
         next();
     } catch (error) {
@@ -36,4 +37,4 @@ const admin = (req, res, next) => {
     next();
 };
 
-module.exports = { auth, admin };
+module.exports = { auth, admin, AUTH_SECRET };

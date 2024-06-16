@@ -3,10 +3,10 @@ const Feedback = require("../Models/FeedbackModel");
 // Create new feedback
 const createFeedback = async (req, res) => {
     try {
-      const { email, comment, stars,selectedStars,unselectedStars } = req.body;
-  
+      const { comment, stars,selectedStars,unselectedStars } = req.body;
+      const user = req.user;
       const newFeedback = new Feedback({
-        email: email,
+      //  email: user.email,
         comment: comment,
         stars: stars,
         selectedStars:selectedStars,
@@ -25,6 +25,7 @@ const createFeedback = async (req, res) => {
 // Get all feedback
 const getAllFeedbacks = async (req, res) => {
     try {
+      const user = req.user;
       const feedback = await Feedback.find();
       res.json(feedback);
     } catch (error) {

@@ -2,6 +2,7 @@
 const User = require("../Models/UserModel");
 const Admin = require("../Models/AdminModel");
 const jwt = require("jsonwebtoken");
+const {AUTH_SECRET} = require("../Middlewares/auth")
 //const nodemailer = require('nodemailer');
 
 
@@ -84,7 +85,7 @@ const LogIn = async (req, res) => {
 
      const token = jwt.sign(
         { id: account._id, email: account.email, role: user ? 'user' : 'admin' },
-        'YOUR_SECRET_KEY',
+        AUTH_SECRET,
         { expiresIn: '1h' }
       );
 

@@ -83,7 +83,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: 'meriembenamara001@gmail.com', // Adresse e-mail à partir de laquelle envoyer les e-mails
-      pass: '2512baba' // Mot de passe de l'adresse e-mail
+      pass: '' // Mot de passe de l'adresse e-mail
     }
   });
   

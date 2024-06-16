@@ -5,10 +5,10 @@ const feedbackSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  email: {
-    type: String,
-    required: true
-  },
+  //email: {
+    //type: String,
+    //required: true
+  //},
   comment: {
     type: String,
     required: true

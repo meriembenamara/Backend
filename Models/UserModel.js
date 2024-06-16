@@ -80,7 +80,7 @@ First_name: {
 
   resetTokenExpiration: Date,
 
-  profileUrl: {
+  ImageProfil: {
     type: String,
   },
   
