@@ -4,11 +4,21 @@ const Admin = require("../Models/AdminModel");
 const jwt = require("jsonwebtoken");
 const {AUTH_SECRET} = require("../Middlewares/auth")
 //const nodemailer = require('nodemailer');
-
-
 const bcrypt = require('bcrypt');
+import {generateVerificationCode, SendEmailResetPassword } from "./SendEmail.js"
 
-// Declaring an asynchronous function to create users
+const validatePassword = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const isValidLength = password.length >= minLength;
+
+    return hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar && isValidLength;
+};
+
+
 const SignUp = async(req,res) => {
     try {
         const { First_name, name, email, selectedRole, num_tel, address, password, conf_password} = req.body;
@@ -16,6 +26,10 @@ const SignUp = async(req,res) => {
 
         if (password !== conf_password) {
             return res.json({ success: false, message: "Les mots de passe ne correspondent pas" });
+        }
+
+        if (!validatePassword(password)) {
+            return res.json({ success: false, message: "Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial" });
         }
 
         const existingUser = await User.findOne({ email }); // Vérifier si l'utilisateur existe déjà
@@ -36,11 +50,7 @@ const SignUp = async(req,res) => {
            // role
         });
 
-    // Enregistrement du nouvel utilisateur
     await newUser.save();
-
-    // Génération du jeton JWT
-    //const token = jwt.sign({ userId: newUser._id }, secretKey); // Remplacez '1h' par la durée d'expiration souhaitée
 
     // Renvoi de la réponse avec le jeton JWT
     res.json({ success: true, message: "Inscription réussie",newUser });
@@ -97,6 +107,66 @@ const LogIn = async (req, res) => {
       return res.status(500).json({ message: "Une erreur est survenue lors de la connexion" });
   }
 };
+
+
+// forget password section //
+export const forget_password = async (req, res) => {
+    const { email } = req.body;
+  
+    try {
+      // Find user by email
+      const user = await User.findOne({ email });
+  
+      // Check if user exists
+      if (!user) {
+        return res.status(400).json({ message: 'Email not found' });
+      }
+  
+      // Generate verification code, expiration time, and assign to user object
+      const forgetPasswordCode = generateVerificationCode();
+      const passwordResetExpires = Date.now() + 3600000; // 1 hour expiration
+  
+      user.forget_password_code = forgetPasswordCode;
+      user.passwordResetExpires = passwordResetExpires;
+  
+      await user.save();
+      await SendEmailResetPassword(user.email, forgetPasswordCode, user.First_name);
+  
+      res.json({ message: 'Password reset instructions sent to your email' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+  
+  export const reset_password = async (req, res) => {
+    const { forget_password_code, newPassword } = req.body;
+  
+    try {
+      // Find user by forget_password_code
+      const user = await User.findOne({
+        forget_password_code,
+        passwordResetExpires: { $gt: Date.now() },
+      });
+  
+      // Check if user exists with valid code
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid verification code or expired request' });
+      }
+  
+      user.password = await bcrypt.hash(newPassword, 12);
+      user.forget_password_code = null;
+      user.passwordResetExpires = null;
+  
+      await user.save();
+  
+      res.json({ message: 'Password reset successful' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+  
 
 // Exporting functions to be used in other modules
 module.exports = {LogIn,SignUp};

@@ -60,6 +60,9 @@ First_name: {
     default: true,
   },
 
+  forget_password_code: {type: String, default: null},
+  passwordResetExpires: {type: String, default: null},
+
  
   Birthday: {
     type: String,
